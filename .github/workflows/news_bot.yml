@@ -1,0 +1,41 @@
+name: UPSC AI News Harvester
+
+# Run automatically every 3 hours AND allow manual triggers
+on:
+  schedule:
+    - cron: '0 */3 * * *'
+  workflow_dispatch:
+
+# Give the robot permission to save files to your repo
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Libraries
+        run: |
+          pip install feedparser google-generativeai
+
+      - name: Run AI Scraper
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python build_news.py
+
+      - name: Commit and Push new JSON data
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add upsc_news.json
+          # Only commit if the JSON file actually changed
+          git commit -m "Automated AI news update" || exit 0
+          git push
