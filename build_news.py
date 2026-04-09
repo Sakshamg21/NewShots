@@ -1,19 +1,19 @@
 import feedparser
+import requests
+from bs4 import BeautifulSoup
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 import os
 import time
-import requests
 from datetime import datetime
+import re
 
-# 1. Grab the API key securely from GitHub Secrets
+# ==========================================
+# 🛑 CONFIGURATION
+# ==========================================
 API_KEY = os.environ.get("GEMINI_API_KEY")
 genai.configure(api_key=API_KEY)
-
-# ==========================================
-# 🛑 FIREBASE CONFIGURATION
 FIREBASE_URL = "https://newshots-9e66b-default-rtdb.asia-southeast1.firebasedatabase.app"
-# ==========================================
 
 model = genai.GenerativeModel(
     model_name='gemini-1.5-flash',
@@ -25,82 +25,135 @@ model = genai.GenerativeModel(
     }
 )
 
-rss_feeds = {
+RSS_FEEDS = {
     "The Times of India": "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
     "The Hindu": "https://www.thehindu.com/news/national/feeder/default.rss",
     "Indian Express": "https://indianexpress.com/section/india/feed/",
-    "The Economic Times": "https://economictimes.indiatimes.com/news/economy/rssfeeds/1373380680.cms",
-    "Press Information Bureau": "https://pib.gov.in/rss/Mainstream.xml"
+    "The Economic Times": "https://economictimes.indiatimes.com/news/economy/rssfeeds/1373380680.cms"
 }
 
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+
+# ==========================================
+# 🧠 AI & HELPER FUNCTIONS
+# ==========================================
+
+def get_existing_database():
+    """Fetches the current database from Firebase to prevent duplicates."""
+    try:
+        response = requests.get(f"{FIREBASE_URL}/articles.json", timeout=10)
+        if response.status_code == 200 and response.json():
+            return response.json().get("data", [])
+    except Exception:
+        pass
+    return []
 
 def analyze_with_ai(headline, summary):
-    """Refined UPSC filter to ensure we get results."""
+    """Asks Gemini to categorize, summarize, and tag for UPSC."""
     prompt = f"""
-    You are a UPSC curriculum expert.
+    Read this news article.
     Headline: {headline}
     Context: {summary}
     
-    TASK:
-    1. If this news is about Indian Politics, Global Summits, Economy, Science/Tech, or Environment, it is HIGHLY RELEVANT.
-    2. If it is purely about Entertainment, Local Petty Crime, or Sports scores, say REJECT.
-    3. Otherwise, provide a 3-bullet factual summary for a Civil Services aspirant. Do not use bold (**) characters.
+    You must output your response exactly in this format:
+    CATEGORY: [Choose exactly one: Politics, Business, Technology, Science, Sports, Entertainment, International, National, Miscellaneous]
+    UPSC_RELEVANT: [True or False - True ONLY if it impacts Indian polity, economy, IR, or major science]
+    SUMMARY: [Write exactly 3 concise, factual sentences.]
     """
     try:
         response = model.generate_content(prompt)
         text = response.text.strip()
-        if "REJECT" in text.upper():
-            return None
-        return text
-    except Exception:
+        
+        # Parse the AI's structured response
+        category = re.search(r'CATEGORY:\s*(.*)', text).group(1).strip()
+        upsc_tag = re.search(r'UPSC_RELEVANT:\s*(.*)', text).group(1).strip()
+        summary_text = re.search(r'SUMMARY:\s*(.*)', text, re.DOTALL).group(1).strip()
+        
+        is_upsc = "True" in upsc_tag
+        return {"category": category, "is_upsc_relevant": is_upsc, "summary": summary_text}
+    except Exception as e:
+        print(f"  ⚠️ AI Parsing Error: {e}")
         return None
+
+def fetch_image_from_link(link):
+    """Scrapes the article link to find the main image."""
+    try:
+        res = requests.get(link, headers={'User-Agent': USER_AGENT}, timeout=10)
+        soup = BeautifulSoup(res.content, 'html.parser')
+        og_img = soup.find('meta', property='og:image')
+        if og_img and og_img.get('content'):
+            return og_img['content']
+    except Exception:
+        pass
+    return "https://images.unsplash.com/photo-1495020689067-958852a7765e?q=80&w=1000"
+
+# ==========================================
+# 🚜 MAIN HARVESTER LOGIC
+# ==========================================
 
 def harvest_news():
     print(f"🚜 Harvester started at {datetime.now().strftime('%H:%M:%S')}")
-    final_articles = []
     
-    for source_name, feed_url in rss_feeds.items():
-        print(f"Reading {source_name}...")
+    # 1. Load existing news so we don't repeat articles
+    existing_articles = get_existing_database()
+    seen_headlines = {art['headline'].lower() for art in existing_articles}
+    print(f"📚 Loaded {len(existing_articles)} existing articles from Firebase.")
+    
+    new_articles = []
+    
+    # 2. Check Feeds
+    for source_name, feed_url in RSS_FEEDS.items():
+        print(f"\nReading {source_name}...")
         feed = feedparser.parse(feed_url, agent=USER_AGENT)
         
-        # Limit to top 5 articles per source to keep the run fast and avoid API limits
-        for entry in feed.entries[:5]:
+        for entry in feed.entries[:10]:
             headline = entry.get("title", "")
             raw_summary = entry.get("summary", "")
             link = entry.get("link", "")
             
-            ai_summary = analyze_with_ai(headline, raw_summary)
+            # THE DUPLICATE CHECK
+            if headline.lower() in seen_headlines:
+                continue
+                
+            seen_headlines.add(headline.lower())
             
-            if ai_summary:
-                print(f"  ✅ Kept: {headline[:50]}...")
-                final_articles.append({
+            # Process new article
+            ai_data = analyze_with_ai(headline, raw_summary)
+            
+            if ai_data:
+                print(f"  ✨ Added [{ai_data['category']}] (UPSC: {ai_data['is_upsc_relevant']}) -> {headline[:40]}...")
+                
+                image_url = fetch_image_from_link(link)
+                
+                new_articles.append({
                     "headline": headline,
-                    "summary": ai_summary,
+                    "summary": ai_data['summary'],
                     "link": link,
+                    "image": image_url,
                     "source": source_name,
-                    "category": "UPSC Exam",
-                    "time": datetime.now().strftime("%I:%M %p")
+                    "category": ai_data['category'],
+                    "is_upsc_relevant": ai_data['is_upsc_relevant'],
+                    "time_added": datetime.now().strftime("%Y-%m-%d %I:%M %p")
                 })
             
-            # 2-second pause to be safe with the free Gemini tier
-            time.sleep(2) 
+            time.sleep(2) # Respect API limits
             
-    # CRITICAL: Even if no articles found, we send the "last_updated" time
+    # 3. Combine Old and New News (Keep latest 100 to save space)
+    all_articles = new_articles + existing_articles
+    all_articles = all_articles[:100] 
+    
+    # 4. Save back to Firebase
     payload = {
         "status": "success",
         "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "article_count": len(final_articles),
-        "data": final_articles
+        "total_articles": len(all_articles),
+        "data": all_articles
     }
     
-    database_endpoint = f"{FIREBASE_URL}/upsc_news.json"
-    
     try:
-        # We use .put() to replace the old news with the fresh news
-        response = requests.put(database_endpoint, json=payload)
+        response = requests.put(f"{FIREBASE_URL}/articles.json", json=payload)
         if response.status_code == 200:
-            print(f"🚀 SUCCESS! {len(final_articles)} articles live on Firebase.")
+            print(f"\n🚀 SUCCESS! Added {len(new_articles)} new articles. Database now has {len(all_articles)} items.")
         else:
             print(f"❌ Firebase Error: {response.text}")
     except Exception as e:
