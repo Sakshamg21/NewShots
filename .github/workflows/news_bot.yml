@@ -3,7 +3,7 @@ name: UPSC AI News Harvester
 on:
   schedule:
     - cron: '*/30 * * * *'
-  workflow_dispatch: # This allows you to run it manually!
+  workflow_dispatch: # Allows you to force a run manually from the Actions tab
 
 permissions:
   contents: write
@@ -13,18 +13,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4 # FIXED: Downgraded from v6 to v4
+        uses: actions/checkout@v4
         with:
-          ref: main  # This keeps the robot on the actual branch
+          ref: main 
 
       - name: Set up Python
-        uses: actions/setup-python@v5 # FIXED: Downgraded from v6 to v5
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
       - name: Install Libraries
         run: |
-          pip install feedparser google-generativeai
+          pip install feedparser google-generativeai requests
 
       - name: Run AI Scraper
         env:
@@ -36,10 +36,10 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
           
-          # Add the file and commit
+          # This adds the local JSON file to the repo as a backup
           git add upsc_news.json
           git commit -m "Automated AI news update" || exit 0
           
-          # The "Force Sync" strategy
+          # Sync with the cloud and push
           git pull --rebase origin main
           git push origin main
