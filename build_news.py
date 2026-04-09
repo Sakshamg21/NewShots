@@ -11,7 +11,7 @@ genai.configure(api_key=API_KEY)
 
 # ==========================================
 # 🛑 PASTE YOUR FIREBASE URL RIGHT HERE:
-FIREBASE_URL = "https://newshots-9e66b-default-rtdb.asia-southeast1.firebasedatabase.app/"
+FIREBASE_URL = "https://newshots-9e66b-default-rtdb.asia-southeast1.firebasedatabase.app"
 # ==========================================
 
 # Create the model with relaxed safety settings for news analysis
