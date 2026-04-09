@@ -1,2 +1,4 @@
 feedparser
-google-generativeai
+requests
+beautifulsoup4
+groq
