@@ -26,6 +26,7 @@ RSS_FEEDS = {
     "The Hindu": "https://www.thehindu.com/news/national/feeder/default.rss",
     "Indian Express": "https://indianexpress.com/section/india/feed/",
     "The Economic Times": "https://economictimes.indiatimes.com/news/economy/rssfeeds/1373380680.cms"
+    "Press Information Bureau": "https://pib.gov.in/rss/Mainstream.xml"
 }
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
