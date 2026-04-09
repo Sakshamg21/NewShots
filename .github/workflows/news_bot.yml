@@ -13,10 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v6  # <--- UPGRADED to v6 for Node 24 support
+        uses: actions/checkout@v6
+        with:
+          ref: main  # 1. This keeps the robot on the actual branch
 
       - name: Set up Python
-        uses: actions/setup-python@v6 # <--- UPGRADED to v6 for Node 24 support
+        uses: actions/setup-python@v6
         with:
           python-version: '3.10'
 
@@ -33,9 +35,11 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
+          
+          # 2. Add the file and commit
           git add upsc_news.json
-          # Commit the changes, but don't fail if there's nothing new
           git commit -m "Automated AI news update" || exit 0
-          # Grab Saksham's manual changes first to stay in sync
+          
+          # 3. The "Force Sync" strategy
           git pull --rebase origin main
-          git push
+          git push origin main
