@@ -35,6 +35,8 @@ jobs:
       - name: Run AI Scraper
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
+          GOOGLE_CX_ID: ${{ secrets.GOOGLE_CX_ID }}
         run: python build_news.py
 
       - name: Commit and Push new JSON data
