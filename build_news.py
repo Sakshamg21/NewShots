@@ -25,7 +25,7 @@ RSS_FEEDS = {
     "The Times of India": "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
     "The Hindu": "https://www.thehindu.com/news/national/feeder/default.rss",
     "Indian Express": "https://indianexpress.com/section/india/feed/",
-    "The Economic Times": "https://economictimes.indiatimes.com/news/economy/rssfeeds/1373380680.cms"
+    "The Economic Times": "https://economictimes.indiatimes.com/news/economy/rssfeeds/1373380680.cms",
     "Press Information Bureau": "https://pib.gov.in/rss/Mainstream.xml"
 }
 
