@@ -3,7 +3,7 @@ name: UPSC AI News Harvester
 on:
   schedule:
     - cron: '*/30 * * * *'
-  workflow_dispatch:
+  workflow_dispatch: # This allows you to run it manually!
 
 permissions:
   contents: write
@@ -13,12 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4 # FIXED: Downgraded from v6 to v4
         with:
-          ref: main  # 1. This keeps the robot on the actual branch
+          ref: main  # This keeps the robot on the actual branch
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5 # FIXED: Downgraded from v6 to v5
         with:
           python-version: '3.10'
 
@@ -36,10 +36,10 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
           
-          # 2. Add the file and commit
+          # Add the file and commit
           git add upsc_news.json
           git commit -m "Automated AI news update" || exit 0
           
-          # 3. The "Force Sync" strategy
+          # The "Force Sync" strategy
           git pull --rebase origin main
           git push origin main
