@@ -2,7 +2,7 @@ name: UPSC AI News Harvester
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '*/30 * * * *' # You can keep it at 30 minutes!
   workflow_dispatch: # Allows you to force a run manually from the Actions tab
 
 permissions:
@@ -28,13 +28,14 @@ jobs:
           python-version: '3.10'
 
       - name: Install Libraries
-        # Added -U to force the newest Gemini library and removed duckduckgo!
+        # 👇 CHANGED: Removed google-generativeai and added groq
         run: |
-          pip install -U feedparser google-generativeai requests beautifulsoup4
+          pip install -U feedparser groq requests beautifulsoup4
 
       - name: Run AI Scraper
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # 👇 CHANGED: Passing the Groq key instead of Gemini
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_CX_ID: ${{ secrets.GOOGLE_CX_ID }}
         run: python build_news.py
