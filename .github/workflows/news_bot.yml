@@ -36,4 +36,5 @@ jobs:
           git add upsc_news.json
           # Only commit if the JSON file actually changed
           git commit -m "Automated AI news update" || exit 0
+          git pull --rebase
           git push
