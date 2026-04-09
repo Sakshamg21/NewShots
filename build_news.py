@@ -7,6 +7,7 @@ import os
 import time
 from datetime import datetime
 import re
+from duckduckgo_search import DDGS
 
 # ==========================================
 # 🛑 CONFIGURATION
@@ -75,17 +76,49 @@ def analyze_with_ai(headline, summary):
         print(f"  ⚠️ AI Parsing Error: {e}")
         return None
 
-def fetch_image_from_link(link):
-    """Scrapes the article link to find the main image."""
+def fetch_media_details(headline, link):
+    """Scrapes the article to find images and check for videos with DDG Fallback."""
+    image_url = "https://images.unsplash.com/photo-1495020689067-958852a7765e?q=80&w=1000"
+    is_video = False
+    
     try:
+        # 1. Scrape the page
         res = requests.get(link, headers={'User-Agent': USER_AGENT}, timeout=10)
         soup = BeautifulSoup(res.content, 'html.parser')
-        og_img = soup.find('meta', property='og:image')
+        
+        # 2. Video Detection Logic
+        if "/videos/" in link.lower() or "video-show" in link.lower():
+            is_video = True
+        og_type = soup.find('meta', property='og:type')
+        if og_type and "video" in og_type.get('content', '').lower():
+            is_video = True
+        vids = soup.find_all('iframe', src=re.compile(r'youtube|vimeo|dailymotion|videoplayer|indiatimes', re.I))
+        if vids:
+            is_video = True
+
+        # 3. Image Detection Logic
+        og_img = soup.find('meta', property='og:image') or soup.find('meta', attrs={'name': 'twitter:image'})
         if og_img and og_img.get('content'):
-            return og_img['content']
-    except Exception:
-        pass
-    return "https://images.unsplash.com/photo-1495020689067-958852a7765e?q=80&w=1000"
+            temp_img = og_img['content']
+            # If it's a generic logo, force a fallback
+            if not any(x in temp_img.lower() for x in ["logo", "icon", "thehindu", "toi-logo", "default"]):
+                image_url = temp_img
+                return {"image": image_url, "is_video": is_video}
+
+        # 4. DuckDuckGo Fallback
+        print(f"    🔍 Searching DuckDuckGo for fallback image...")
+        clean_query = re.sub(r'[^\w\s]', '', headline) 
+        search_query = " ".join(clean_query.split()[:7]) + " breaking news"
+        time.sleep(1.5) # Crucial to avoid instant DDG bans
+        with DDGS() as ddgs:
+            results = list(ddgs.images(search_query, max_results=1))
+            if results: 
+                image_url = results[0]['image']
+                
+    except Exception as e:
+        print(f"    ⚠️ Media fetch error: {e}")
+        
+    return {"image": image_url, "is_video": is_video}
 
 # ==========================================
 # 🚜 MAIN HARVESTER LOGIC
@@ -123,13 +156,15 @@ def harvest_news():
             if ai_data:
                 print(f"  ✨ Added [{ai_data['category']}] (UPSC: {ai_data['is_upsc_relevant']}) -> {headline[:40]}...")
                 
-                image_url = fetch_image_from_link(link)
+                # Fetch image and video status
+                media_data = fetch_media_details(headline, link)
                 
                 new_articles.append({
                     "headline": headline,
                     "summary": ai_data['summary'],
                     "link": link,
-                    "image": image_url,
+                    "image": media_data['image'],
+                    "is_video": media_data['is_video'],
                     "source": source_name,
                     "category": ai_data['category'],
                     "is_upsc_relevant": ai_data['is_upsc_relevant'],
