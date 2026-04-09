@@ -188,7 +188,7 @@ def harvest_news():
                     "time_added": datetime.now().strftime("%Y-%m-%d %I:%M %p")
                 })
             
-            time.sleep(2) # Respect API limits
+            time.sleep(15) # Respect API limits
             
     # 3. Combine Old and New News (Keep latest 100 to save space)
     all_articles = new_articles + existing_articles
