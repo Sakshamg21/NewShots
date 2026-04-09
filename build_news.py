@@ -7,14 +7,18 @@ import os
 import time
 from datetime import datetime
 import re
-from duckduckgo_search import DDGS
 
 # ==========================================
 # 🛑 CONFIGURATION
 # ==========================================
 API_KEY = os.environ.get("GEMINI_API_KEY")
 genai.configure(api_key=API_KEY)
+
 FIREBASE_URL = "https://newshots-9e66b-default-rtdb.asia-southeast1.firebasedatabase.app"
+
+# NEW: Google Custom Search API Credentials
+GOOGLE_API_KEY = os.environ.get("GOOGLE_SEARCH_API_KEY")
+GOOGLE_CX_ID = os.environ.get("GOOGLE_CX_ID")
 
 model = genai.GenerativeModel(
     model_name='gemini-1.5-flash',
@@ -77,7 +81,7 @@ def analyze_with_ai(headline, summary):
         return None
 
 def fetch_media_details(headline, link):
-    """Scrapes the article to find images and check for videos with DDG Fallback."""
+    """Scrapes the article to find images/videos, with Google API Fallback."""
     image_url = "https://images.unsplash.com/photo-1495020689067-958852a7765e?q=80&w=1000"
     is_video = False
     
@@ -100,20 +104,33 @@ def fetch_media_details(headline, link):
         og_img = soup.find('meta', property='og:image') or soup.find('meta', attrs={'name': 'twitter:image'})
         if og_img and og_img.get('content'):
             temp_img = og_img['content']
-            # If it's a generic logo, force a fallback
+            # If it's a generic logo, force the Google fallback
             if not any(x in temp_img.lower() for x in ["logo", "icon", "thehindu", "toi-logo", "default"]):
                 image_url = temp_img
                 return {"image": image_url, "is_video": is_video}
 
-        # 4. DuckDuckGo Fallback
-        print(f"    🔍 Searching DuckDuckGo for fallback image...")
-        clean_query = re.sub(r'[^\w\s]', '', headline) 
-        search_query = " ".join(clean_query.split()[:7]) + " breaking news"
-        time.sleep(1.5) # Crucial to avoid instant DDG bans
-        with DDGS() as ddgs:
-            results = list(ddgs.images(search_query, max_results=1))
-            if results: 
-                image_url = results[0]['image']
+        # 4. Official Google Image Search Fallback
+        if GOOGLE_API_KEY and GOOGLE_CX_ID:
+            print(f"    🔍 Asking Google for a better image...")
+            clean_query = re.sub(r'[^\w\s]', '', headline) 
+            search_query = " ".join(clean_query.split()[:7]) + " news"
+            
+            google_url = "https://customsearch.googleapis.com/customsearch/v1"
+            params = {
+                'q': search_query,
+                'cx': GOOGLE_CX_ID,
+                'key': GOOGLE_API_KEY,
+                'searchType': 'image',
+                'num': 1 # We only need the top 1 result
+            }
+            
+            api_res = requests.get(google_url, params=params, timeout=10)
+            if api_res.status_code == 200:
+                data = api_res.json()
+                if 'items' in data and len(data['items']) > 0:
+                    image_url = data['items'][0]['link']
+            else:
+                print(f"    ⚠️ Google API Error: {api_res.status_code} - {api_res.text}")
                 
     except Exception as e:
         print(f"    ⚠️ Media fetch error: {e}")
