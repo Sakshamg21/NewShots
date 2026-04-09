@@ -5,14 +5,13 @@ import os
 import time
 from datetime import datetime
 import re
-import difflib  # 👇 NEW: Imported for smart duplicate filtering
+import difflib
 
 from groq import Groq
 
 # ==========================================
 # 🛑 CONFIGURATION
 # ==========================================
-# Initialize Groq Client
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=GROQ_API_KEY)
 
@@ -27,7 +26,6 @@ RSS_FEEDS = {
     "The Hindu": "https://www.thehindu.com/news/national/feeder/default.rss",
     "Indian Express": "https://indianexpress.com/section/india/feed/",
     "The Economic Times": "https://economictimes.indiatimes.com/news/economy/rssfeeds/1373380680.cms"
-    "Press Information Bureau": "https://pib.gov.in/rss/Mainstream.xml"
 }
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
@@ -37,7 +35,6 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 # ==========================================
 
 def get_existing_database():
-    """Fetches the current database from Firebase to prevent duplicates."""
     try:
         response = requests.get(f"{FIREBASE_URL}/articles.json", timeout=10)
         if response.status_code == 200 and response.json():
@@ -46,7 +43,6 @@ def get_existing_database():
         pass
     return []
 
-# 👇 NEW: Your smart fuzzy-matching function
 def is_duplicate_story(new_headline, processed_headlines, threshold=0.60):
     for old_headline in processed_headlines:
         score = difflib.SequenceMatcher(None, new_headline.lower(), old_headline.lower()).ratio()
@@ -56,31 +52,31 @@ def is_duplicate_story(new_headline, processed_headlines, threshold=0.60):
     return False
 
 def analyze_with_ai(headline, summary):
-    """Asks Llama 3 via Groq to categorize, summarize, and tag for UPSC."""
-    prompt = f"""
-    Read this news article.
-    Headline: {headline}
-    Context: {summary}
+    """Integrated: Professional News Analyst persona with 5-sentence requirement."""
     
-    You must output your response exactly in this format:
-    CATEGORY: [Choose exactly one: Politics, Business, Technology, Science, Sports, Entertainment, International, National, Miscellaneous]
-    UPSC_RELEVANT: [True or False - True ONLY if it impacts Indian polity, economy, IR, or major science]
-    SUMMARY: [Write exactly 3 concise, factual sentences.]
-    """
+    # 👇 UPDATED PROMPT: Using your Professional Analyst persona and 5-sentence rule
+    prompt = (
+        f"You are a professional News Analyst. Read the following news story and "
+        f"categorize it, determine UPSC relevance, and summarize it into exactly 5 concise, factual sentences. "
+        f"Do not use bullet points, intro text, or bolding.\n\n"
+        f"HEADLINE: {headline}\n"
+        f"TEXT: {summary[:2500]}\n\n"
+        f"You must output exactly in this format:\n"
+        f"CATEGORY: [Politics, Business, Technology, Science, Sports, Entertainment, International, National, or Miscellaneous]\n"
+        f"UPSC_RELEVANT: [True or False]\n"
+        f"SUMMARY: [Your 5 sentences here]"
+    )
+
     try:
         response = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
+            messages=[{"role": "user", "content": prompt}],
             model="llama-3.1-8b-instant", 
             temperature=0.2, 
         )
         
         text = response.choices[0].message.content.strip()
         
+        # Regex parsing to extract data for the Flutter App
         category = re.search(r'CATEGORY:\s*(.*)', text).group(1).strip()
         upsc_tag = re.search(r'UPSC_RELEVANT:\s*(.*)', text).group(1).strip()
         summary_text = re.search(r'SUMMARY:\s*(.*)', text, re.DOTALL).group(1).strip()
@@ -88,14 +84,12 @@ def analyze_with_ai(headline, summary):
         is_upsc = "True" in upsc_tag
         return {"category": category, "is_upsc_relevant": is_upsc, "summary": summary_text}
     except Exception as e:
-        print(f"  ⚠️ Llama Parsing Error: {e}")
+        print(f"  ⚠️ AI Analysis Error: {e}")
         return None
 
 def fetch_media_details(headline, link):
-    """Scrapes the article to find images/videos, with Google API Fallback."""
     image_url = "https://images.unsplash.com/photo-1495020689067-958852a7765e?q=80&w=1000"
     is_video = False
-    
     try:
         res = requests.get(link, headers={'User-Agent': USER_AGENT}, timeout=10)
         soup = BeautifulSoup(res.content, 'html.parser')
@@ -117,30 +111,18 @@ def fetch_media_details(headline, link):
                 return {"image": image_url, "is_video": is_video}
 
         if GOOGLE_API_KEY and GOOGLE_CX_ID:
-            print(f"    🔍 Asking Google for a better image...")
             clean_query = re.sub(r'[^\w\s]', '', headline) 
             search_query = " ".join(clean_query.split()[:7]) + " news"
-            
             google_url = "https://customsearch.googleapis.com/customsearch/v1"
-            params = {
-                'q': search_query,
-                'cx': GOOGLE_CX_ID,
-                'key': GOOGLE_API_KEY,
-                'searchType': 'image',
-                'num': 1 
-            }
-            
+            params = {'q': search_query, 'cx': GOOGLE_CX_ID, 'key': GOOGLE_API_KEY, 'searchType': 'image', 'num': 1}
             api_res = requests.get(google_url, params=params, timeout=10)
             if api_res.status_code == 200:
                 data = api_res.json()
                 if 'items' in data and len(data['items']) > 0:
                     image_url = data['items'][0]['link']
-            else:
-                print(f"    ⚠️ Google API Error: {api_res.status_code} - {api_res.text}")
                 
     except Exception as e:
         print(f"    ⚠️ Media fetch error: {e}")
-        
     return {"image": image_url, "is_video": is_video}
 
 # ==========================================
@@ -149,17 +131,11 @@ def fetch_media_details(headline, link):
 
 def harvest_news():
     print(f"🚜 Harvester started at {datetime.now().strftime('%H:%M:%S')}")
-    
-    # 1. Load existing news
     existing_articles = get_existing_database()
-    
-    # 👇 CHANGED: We now use a list of strings so we can iterate over them for fuzzy matching
     processed_headlines = [art['headline'] for art in existing_articles]
-    print(f"📚 Loaded {len(existing_articles)} existing articles from Firebase.")
     
     new_articles = []
     
-    # 2. Check Feeds
     for source_name, feed_url in RSS_FEEDS.items():
         print(f"\nReading {source_name}...")
         feed = feedparser.parse(feed_url, agent=USER_AGENT)
@@ -169,19 +145,14 @@ def harvest_news():
             raw_summary = entry.get("summary", "")
             link = entry.get("link", "")
             
-            # 👇 CHANGED: The Smart AI Duplicate Check
             if is_duplicate_story(headline, processed_headlines):
                 continue
                 
-            # If it passes, add it to our processed list so we don't add it again later in this run
             processed_headlines.append(headline)
-            
-            # Process new article
             ai_data = analyze_with_ai(headline, raw_summary)
             
             if ai_data:
-                print(f"  ✨ Added [{ai_data['category']}] (UPSC: {ai_data['is_upsc_relevant']}) -> {headline[:40]}...")
-                
+                print(f"  ✨ Added [{ai_data['category']}] -> {headline[:40]}...")
                 media_data = fetch_media_details(headline, link)
                 
                 new_articles.append({
@@ -195,14 +166,11 @@ def harvest_news():
                     "is_upsc_relevant": ai_data['is_upsc_relevant'],
                     "time_added": datetime.now().strftime("%Y-%m-%d %I:%M %p")
                 })
-            
             time.sleep(3) 
             
-    # 3. Combine Old and New News 
     all_articles = new_articles + existing_articles
     all_articles = all_articles[:100] 
     
-    # 4. Save back to Firebase
     payload = {
         "status": "success",
         "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -213,9 +181,7 @@ def harvest_news():
     try:
         response = requests.put(f"{FIREBASE_URL}/articles.json", json=payload)
         if response.status_code == 200:
-            print(f"\n🚀 SUCCESS! Added {len(new_articles)} new articles. Database now has {len(all_articles)} items.")
-        else:
-            print(f"❌ Firebase Error: {response.text}")
+            print(f"\n🚀 SUCCESS! Database updated with {len(new_articles)} new stories.")
     except Exception as e:
          print(f"❌ Connection Error: {e}")
 
