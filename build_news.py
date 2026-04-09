@@ -21,7 +21,7 @@ GOOGLE_API_KEY = os.environ.get("GOOGLE_SEARCH_API_KEY")
 GOOGLE_CX_ID = os.environ.get("GOOGLE_CX_ID")
 
 model = genai.GenerativeModel(
-    model_name='gemini-2.0-flash-thinking-exp',
+    model_name='gemini-1.5-pro',
     safety_settings={
         HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
         HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
