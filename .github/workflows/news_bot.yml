@@ -11,6 +11,11 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    # This silences the annoying Node.js 20 deprecation warning
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -23,8 +28,9 @@ jobs:
           python-version: '3.10'
 
       - name: Install Libraries
+        # Added beautifulsoup4 and duckduckgo-search for the media scraper
         run: |
-          pip install feedparser google-generativeai requests
+          pip install feedparser google-generativeai requests beautifulsoup4 duckduckgo-search
 
       - name: Run AI Scraper
         env:
