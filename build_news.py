@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 import re
 import difflib
-import json  # 👇 NEW: Required for saving the local backup
+import json 
 
 from groq import Groq
 
@@ -17,6 +17,10 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=GROQ_API_KEY)
 
 FIREBASE_URL = "https://newshots-9e66b-default-rtdb.asia-southeast1.firebasedatabase.app"
+
+# 👇 NEW: VIP PASS for your Private Database
+# Make sure to add this secret in GitHub Repo Settings -> Secrets
+FIREBASE_SECRET = os.environ.get("FIREBASE_SECRET")
 
 # Google Custom Search API Credentials 
 GOOGLE_API_KEY = os.environ.get("GOOGLE_SEARCH_API_KEY")
@@ -38,8 +42,12 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 
 def get_existing_database():
     try:
-        # Appending .json is required for Firebase REST API
-        response = requests.get(f"{FIREBASE_URL}/articles.json", timeout=10)
+        # Auth is required even for reading if your rules are private
+        url = f"{FIREBASE_URL}/articles.json"
+        if FIREBASE_SECRET:
+            url += f"?auth={FIREBASE_SECRET}"
+            
+        response = requests.get(url, timeout=10)
         if response.status_code == 200 and response.json():
             return response.json().get("data", [])
     except Exception as e:
@@ -55,7 +63,7 @@ def is_duplicate_story(new_headline, processed_headlines, threshold=0.60):
     return False
 
 def analyze_with_ai(headline, summary):
-    """Professional News Analyst persona using the fast 8B model."""
+    """Robust 8B Analysis with strictly enforced formatting."""
     
     prompt = (
         f"You are a professional News Analyst. Read the following news story and "
@@ -66,7 +74,7 @@ def analyze_with_ai(headline, summary):
         f"Format:\n"
         f"CATEGORY: [One-word category]\n"
         f"UPSC_RELEVANT: [True/False]\n"
-        f"SUMMARY: [Your 5 sentences here]"
+        f"SUMMARY: [Your 5 sentences]"
     )
 
     try:
@@ -78,7 +86,7 @@ def analyze_with_ai(headline, summary):
         
         text = response.choices[0].message.content.strip()
         
-        # Robust Parsing Logic
+        # Robust Parsing (handles case sensitivity and line breaks)
         cat_match = re.search(r'CATEGORY:\s*(.*?)(?=\n|UPSC_RELEVANT:|$)', text, re.IGNORECASE)
         upsc_match = re.search(r'UPSC_RELEVANT:\s*(.*?)(?=\n|SUMMARY:|$)', text, re.IGNORECASE)
         sum_match = re.search(r'SUMMARY:\s*(.*)', text, re.IGNORECASE | re.DOTALL)
@@ -173,9 +181,8 @@ def harvest_news():
             
             time.sleep(2) 
             
-    # Combine and trim to latest 100
-    all_articles = new_articles + existing_articles
-    all_articles = all_articles[:100] 
+    # Combine and keep only the latest 100
+    all_articles = (new_articles + existing_articles)[:100]
     
     payload = {
         "status": "success",
@@ -184,14 +191,19 @@ def harvest_news():
         "data": all_articles
     }
     
-    # 👇 FIX: Save the local JSON file so the GitHub Action doesn't crash
+    # 💾 Step 1: Save local backup for GitHub Actions
     with open('upsc_news.json', 'w') as f:
         json.dump(payload, f, indent=4)
-        print("💾 Local backup saved to upsc_news.json")
+    print("💾 Local backup saved to upsc_news.json")
 
-    # 👇 SAVE TO FIREBASE
+    # 🚀 Step 2: Push to Firebase with Auth
     try:
-        response = requests.put(f"{FIREBASE_URL}/articles.json", json=payload, timeout=15)
+        # We append ?auth=... to authorize the REST request
+        url = f"{FIREBASE_URL}/articles.json"
+        if FIREBASE_SECRET:
+            url += f"?auth={FIREBASE_SECRET}"
+            
+        response = requests.put(url, json=payload, timeout=15)
         if response.status_code == 200:
             print(f"\n🚀 SUCCESS! Database updated with {len(new_articles)} new stories.")
         else:
