@@ -6,6 +6,7 @@ import time
 from datetime import datetime
 import re
 import difflib
+import json  # 👇 NEW: Required for saving the local backup
 
 from groq import Groq
 
@@ -37,11 +38,12 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 
 def get_existing_database():
     try:
+        # Appending .json is required for Firebase REST API
         response = requests.get(f"{FIREBASE_URL}/articles.json", timeout=10)
         if response.status_code == 200 and response.json():
             return response.json().get("data", [])
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"⚠️ Could not connect to Firebase: {e}")
     return []
 
 def is_duplicate_story(new_headline, processed_headlines, threshold=0.60):
@@ -64,20 +66,19 @@ def analyze_with_ai(headline, summary):
         f"Format:\n"
         f"CATEGORY: [One-word category]\n"
         f"UPSC_RELEVANT: [True/False]\n"
-        f"SUMMARY: [Your 5 sentences]"
+        f"SUMMARY: [Your 5 sentences here]"
     )
 
     try:
         response = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            # 👇 BACK TO 8B: Fast and reliable
             model="llama-3.1-8b-instant", 
             temperature=0.1, 
         )
         
         text = response.choices[0].message.content.strip()
         
-        # Robust Parsing
+        # Robust Parsing Logic
         cat_match = re.search(r'CATEGORY:\s*(.*?)(?=\n|UPSC_RELEVANT:|$)', text, re.IGNORECASE)
         upsc_match = re.search(r'UPSC_RELEVANT:\s*(.*?)(?=\n|SUMMARY:|$)', text, re.IGNORECASE)
         sum_match = re.search(r'SUMMARY:\s*(.*)', text, re.IGNORECASE | re.DOTALL)
@@ -124,7 +125,7 @@ def fetch_media_details(headline, link):
                 if 'items' in data and len(data['items']) > 0:
                     image_url = data['items'][0]['link']
                 
-    except Exception as e:
+    except Exception:
         pass
     return {"image": image_url, "is_video": is_video}
 
@@ -170,9 +171,9 @@ def harvest_news():
                     "time_added": datetime.now().strftime("%Y-%m-%d %I:%M %p")
                 })
             
-            # 👇 BACK TO 2 SECONDS: 8B can handle the speed!
             time.sleep(2) 
             
+    # Combine and trim to latest 100
     all_articles = new_articles + existing_articles
     all_articles = all_articles[:100] 
     
@@ -183,10 +184,18 @@ def harvest_news():
         "data": all_articles
     }
     
+    # 👇 FIX: Save the local JSON file so the GitHub Action doesn't crash
+    with open('upsc_news.json', 'w') as f:
+        json.dump(payload, f, indent=4)
+        print("💾 Local backup saved to upsc_news.json")
+
+    # 👇 SAVE TO FIREBASE
     try:
-        response = requests.put(f"{FIREBASE_URL}/articles.json", json=payload)
+        response = requests.put(f"{FIREBASE_URL}/articles.json", json=payload, timeout=15)
         if response.status_code == 200:
-            print(f"\n🚀 SUCCESS! Added {len(new_articles)} new stories using Llama 8B.")
+            print(f"\n🚀 SUCCESS! Database updated with {len(new_articles)} new stories.")
+        else:
+            print(f"❌ Firebase Error {response.status_code}: {response.text}")
     except Exception as e:
          print(f"❌ Connection Error: {e}")
 
