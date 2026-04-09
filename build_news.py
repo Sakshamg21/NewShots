@@ -53,37 +53,45 @@ def is_duplicate_story(new_headline, processed_headlines, threshold=0.60):
     return False
 
 def analyze_with_ai(headline, summary):
-    """Integrated: Professional News Analyst persona with 5-sentence requirement."""
+    """Professional News Analyst persona using the fast 8B model."""
     
-    # 👇 UPDATED PROMPT: Using your Professional Analyst persona and 5-sentence rule
     prompt = (
         f"You are a professional News Analyst. Read the following news story and "
-        f"categorize it, determine UPSC relevance, and summarize it into exactly 5 concise, factual sentences. "
-        f"Do not use bullet points, intro text, or bolding.\n\n"
+        f"categorize it, determine UPSC relevance, and summarize it into exactly 4 concise, factual sentences. "
+        f"IMPORTANT: Start your response immediately with 'CATEGORY:' and do not include any intro text.\n\n"
         f"HEADLINE: {headline}\n"
         f"TEXT: {summary[:2500]}\n\n"
-        f"You must output exactly in this format:\n"
-        f"CATEGORY: [Politics, Business, Technology, Science, Sports, Entertainment, International, National, or Miscellaneous]\n"
-        f"UPSC_RELEVANT: [True or False]\n"
-        f"SUMMARY: [Your 5 sentences here]"
+        f"Format:\n"
+        f"CATEGORY: [One-word category]\n"
+        f"UPSC_RELEVANT: [True/False]\n"
+        f"SUMMARY: [Your 5 sentences]"
     )
 
     try:
         response = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
+            # 👇 BACK TO 8B: Fast and reliable
             model="llama-3.1-8b-instant", 
-            temperature=0.2, 
+            temperature=0.1, 
         )
         
         text = response.choices[0].message.content.strip()
         
-        # Regex parsing to extract data for the Flutter App
-        category = re.search(r'CATEGORY:\s*(.*)', text).group(1).strip()
-        upsc_tag = re.search(r'UPSC_RELEVANT:\s*(.*)', text).group(1).strip()
-        summary_text = re.search(r'SUMMARY:\s*(.*)', text, re.DOTALL).group(1).strip()
-        
-        is_upsc = "True" in upsc_tag
-        return {"category": category, "is_upsc_relevant": is_upsc, "summary": summary_text}
+        # Robust Parsing
+        cat_match = re.search(r'CATEGORY:\s*(.*?)(?=\n|UPSC_RELEVANT:|$)', text, re.IGNORECASE)
+        upsc_match = re.search(r'UPSC_RELEVANT:\s*(.*?)(?=\n|SUMMARY:|$)', text, re.IGNORECASE)
+        sum_match = re.search(r'SUMMARY:\s*(.*)', text, re.IGNORECASE | re.DOTALL)
+
+        if cat_match and upsc_match and sum_match:
+            category = re.sub(r'[\[\]\.]', '', cat_match.group(1).strip())
+            is_upsc = "true" in upsc_match.group(1).lower()
+            return {
+                "category": category.capitalize(), 
+                "is_upsc_relevant": is_upsc, 
+                "summary": sum_match.group(1).strip()
+            }
+        return None
+
     except Exception as e:
         print(f"  ⚠️ AI Analysis Error: {e}")
         return None
@@ -97,13 +105,7 @@ def fetch_media_details(headline, link):
         
         if "/videos/" in link.lower() or "video-show" in link.lower():
             is_video = True
-        og_type = soup.find('meta', property='og:type')
-        if og_type and "video" in og_type.get('content', '').lower():
-            is_video = True
-        vids = soup.find_all('iframe', src=re.compile(r'youtube|vimeo|dailymotion|videoplayer|indiatimes', re.I))
-        if vids:
-            is_video = True
-
+        
         og_img = soup.find('meta', property='og:image') or soup.find('meta', attrs={'name': 'twitter:image'})
         if og_img and og_img.get('content'):
             temp_img = og_img['content']
@@ -123,7 +125,7 @@ def fetch_media_details(headline, link):
                     image_url = data['items'][0]['link']
                 
     except Exception as e:
-        print(f"    ⚠️ Media fetch error: {e}")
+        pass
     return {"image": image_url, "is_video": is_video}
 
 # ==========================================
@@ -131,7 +133,7 @@ def fetch_media_details(headline, link):
 # ==========================================
 
 def harvest_news():
-    print(f"🚜 Harvester started at {datetime.now().strftime('%H:%M:%S')}")
+    print(f"🚜 Harvester (8B) started at {datetime.now().strftime('%H:%M:%S')}")
     existing_articles = get_existing_database()
     processed_headlines = [art['headline'] for art in existing_articles]
     
@@ -167,7 +169,9 @@ def harvest_news():
                     "is_upsc_relevant": ai_data['is_upsc_relevant'],
                     "time_added": datetime.now().strftime("%Y-%m-%d %I:%M %p")
                 })
-            time.sleep(3) 
+            
+            # 👇 BACK TO 2 SECONDS: 8B can handle the speed!
+            time.sleep(2) 
             
     all_articles = new_articles + existing_articles
     all_articles = all_articles[:100] 
@@ -182,7 +186,7 @@ def harvest_news():
     try:
         response = requests.put(f"{FIREBASE_URL}/articles.json", json=payload)
         if response.status_code == 200:
-            print(f"\n🚀 SUCCESS! Database updated with {len(new_articles)} new stories.")
+            print(f"\n🚀 SUCCESS! Added {len(new_articles)} new stories using Llama 8B.")
     except Exception as e:
          print(f"❌ Connection Error: {e}")
 
