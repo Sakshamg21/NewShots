@@ -13,8 +13,8 @@ from groq import Groq
 # ==========================================
 # 🛑 CONFIGURATION
 # ==========================================
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-client = Groq(api_key=GROQ)
+GROQ_API_KEY = os.environ.get("GROQ")
+client = Groq(api_key=GROQ_API_KEY)
 
 # Ensure NO trailing slash here
 FIREBASE_URL = "https://newshots-9e66b-default-rtdb.asia-southeast1.firebasedatabase.app"
