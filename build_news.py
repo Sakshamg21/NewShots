@@ -3,7 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import difflib
 import json 
@@ -33,13 +33,16 @@ RSS_FEEDS = {
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 
+# Helper function to get exact IST time
+def get_ist_time():
+    return datetime.now() + timedelta(hours=5, minutes=30)
+
 # ==========================================
 # 🧠 AI & HELPER FUNCTIONS
 # ==========================================
 
 def get_existing_database():
     try:
-        # Since Option 1 is done, we hit the URL directly without ?auth=
         response = requests.get(f"{FIREBASE_URL}/articles.json", timeout=10)
         if response.status_code == 200 and response.json():
             return response.json().get("data", [])
@@ -47,7 +50,8 @@ def get_existing_database():
         print(f"⚠️ Connection issue: {e}")
     return []
 
-def is_duplicate_story(new_headline, processed_headlines, threshold=0.60):
+# 👇 UPDATE 1: Changed threshold to 0.85
+def is_duplicate_story(new_headline, processed_headlines, threshold=0.85):
     for old_headline in processed_headlines:
         score = difflib.SequenceMatcher(None, new_headline.lower(), old_headline.lower()).ratio()
         if score > threshold:
@@ -132,7 +136,8 @@ def fetch_media_details(headline, link):
 # ==========================================
 
 def harvest_news():
-    print(f"🚜 Harvester (8B) started at {datetime.now().strftime('%H:%M:%S')}")
+    ist = get_ist_time()
+    print(f"🚜 Harvester (8B) started at {ist.strftime('%H:%M:%S')} (IST)")
     existing_articles = get_existing_database()
     processed_headlines = [art['headline'] for art in existing_articles]
     
@@ -166,8 +171,11 @@ def harvest_news():
                     "source": source_name,
                     "category": ai_data['category'],
                     "is_upsc_relevant": ai_data['is_upsc_relevant'],
-                    "time_added": datetime.now().strftime("%Y-%m-%d %I:%M %p")
+                    "time_added": get_ist_time().strftime("%Y-%m-%d %I:%M %p")
                 })
+            # 👇 UPDATE 2: Added else block to print AI formatting failures
+            else:
+                print(f"  🤖 AI Failed to Format: {headline[:30]}...")
             
             time.sleep(2) 
             
@@ -175,7 +183,7 @@ def harvest_news():
     
     payload = {
         "status": "success",
-        "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "last_updated": get_ist_time().strftime("%Y-%m-%d %I:%M %p"),
         "total_articles": len(all_articles),
         "data": all_articles
     }
