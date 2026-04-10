@@ -1,61 +1,72 @@
 {
     "status": "success",
-    "last_updated": "2026-04-11 04:27 AM",
-    "total_articles": 143,
+    "last_updated": "2026-04-11 05:16 AM",
+    "total_articles": 144,
     "data": [
         {
-            "headline": "Rubio to visit in May, India may host Quad meet",
-            "summary": "US Secretary of State Marco Rubio is set to visit India in May. The visit follows a productive meeting with Indian Foreign Secretary Vikram Misri. The discussions focused on bilateral ties, including trade, critical minerals, defense, and the Quad. Efforts are under way to schedule a Quad foreign ministers' meeting around Rubio's visit. The meeting aims to strengthen bilateral ties and discuss key issues between the two nations.",
-            "link": "https://timesofindia.indiatimes.com/india/rubio-to-visit-in-may-india-may-host-quad-meet/articleshow/130181472.cms",
-            "image": "https://static.toiimg.com/thumb/msid-130181624,width-1280,height-720,imgsize-1003527,resizemode-6,overlay-toi_sw,pt-32,y_pad-600/photo.jpg",
-            "is_video": false,
-            "source": "The Times of India",
-            "category": "Politics",
-            "is_upsc_relevant": true,
-            "time_added": "2026-04-11 04:27 AM"
-        },
-        {
-            "headline": "Parties woo women voters with cash transfer promises",
-            "summary": "Political parties in Assam are competing for women's votes with cash-transfer promises. Women voters have shown high participation in recent elections in Assam, Puducherry, and Kerala. Their turnout has often surpassed that of male voters, influencing electoral dynamics. Parties are offering increased monthly payouts and empowerment initiatives to woo women voters. This strategy is significant as women's votes can impact election outcomes.",
-            "link": "https://timesofindia.indiatimes.com/india/parties-woo-women-voters-with-cash-transfer-promises/articleshow/130182174.cms",
-            "image": "https://static.toiimg.com/thumb/msid-130182173,width-1280,height-720,imgsize-1178671,resizemode-6,overlay-toi_sw,pt-32,y_pad-600/photo.jpg",
-            "is_video": false,
-            "source": "The Times of India",
-            "category": "Politics",
-            "is_upsc_relevant": true,
-            "time_added": "2026-04-11 04:27 AM"
-        },
-        {
-            "headline": "Sensex jumps 919pts as West Asia peace plan moves ahead",
-            "summary": "The Sensex jumped 919 points due to a West Asia peace plan. Global markets, including India's, rallied as the peace plan offered hope for an end to the conflict. Foreign funds made significant inflows after weeks of selling, boosting investor wealth. However, tech stocks faced selling pressure due to renewed AI concerns. The surge in the market was a result of positive investor sentiment.",
-            "link": "https://timesofindia.indiatimes.com/business/india-business/sensex-jumps-919pts-as-west-asia-peace-plan-moves-ahead/articleshow/130182187.cms",
-            "image": "https://static.toiimg.com/thumb/msid-130182186,width-1280,height-720,imgsize-1631114,resizemode-6,overlay-toi_sw,pt-32,y_pad-600/photo.jpg",
-            "is_video": false,
-            "source": "The Times of India",
-            "category": "Economy",
-            "is_upsc_relevant": true,
-            "time_added": "2026-04-11 04:27 AM"
-        },
-        {
-            "headline": "Political slugfest between Congress-BJP in Haryana over crop procurement",
-            "summary": "A political dispute has emerged between the Congress and BJP in Haryana regarding crop procurement. Former Haryana Chief Minister Bhupinder Singh Hooda criticized the treatment of farmers in grain markets. Hooda stated that farmers are being treated like criminals when selling their harvested crops. The issue highlights the challenges faced by farmers in the state. The Congress and BJP are engaged in a slugfest over the matter, with each party attempting to garner support from farmers.",
-            "link": "https://www.thehindu.com/news/national/haryana/political-slugfest-between-congress-bjp-in-haryana-over-crop-procurement/article70848374.ece",
-            "image": "https://th-i.thgim.com/public/news/national/other-states/7n6qic/article70848362.ece/alternates/LANDSCAPE_1200/IMG-20260410-WA0009.jpg",
-            "is_video": false,
-            "source": "The Hindu",
-            "category": "Politics",
-            "is_upsc_relevant": true,
-            "time_added": "2026-04-11 04:27 AM"
-        },
-        {
-            "headline": "\u2018Tum kaale ho, you do not deserve me\u2019: Wife arrested for \u2018plotting\u2019 murder of Madhya Pradesh man",
-            "summary": "A woman in Madhya Pradesh was arrested for allegedly plotting the murder of her husband. The wife was reportedly unhappy with her marriage and had made previous attempts to kill her husband. The police investigation revealed that the wife had hired contract killers to carry out the murder. The husband had survived a previous attempt on his life, and the wife was subsequently arrested. The case is currently under investigation by the local authorities.",
-            "link": "https://indianexpress.com/article/india/dhar-madhya-pradesh-priyanka-purohit-husband-murder-plotting-10630003/",
-            "image": "https://images.indianexpress.com/2026/04/Dhar-murder-case-Priyanka-Purohit-arrest-1.jpg",
+            "headline": "Ceramic City kilns go cold over fuel crisis: \u2018Hippo\u2019 cylinders run out, workers leave",
+            "summary": "The ceramic industry in Ceramic City is facing a severe crisis due to a shortage of fuel. Workers are leaving their jobs as the kilns have stopped functioning. The main reason for the crisis is the unavailability of 'Hippo' cylinders, which are a crucial component for the kilns. The fuel shortage has brought the entire industry to a standstill, affecting the livelihoods of many workers. The crisis is expected to have long-term consequences for the local economy if a solution is not found soon.",
+            "link": "https://indianexpress.com/article/india/ceramic-city-kilns-go-cold-over-fuel-crisis-hippo-cylinders-run-out-workers-leave-10630363/",
+            "image": "https://images.indianexpress.com/2026/04/pottery-4cols.jpeg",
             "is_video": false,
             "source": "Indian Express",
+            "category": "Economy",
+            "is_upsc_relevant": true,
+            "time_added": "2026-04-11 05:16 AM"
+        },
+        {
+            "category": "Politics",
+            "headline": "Rubio to visit in May, India may host Quad meet",
+            "image": "https://static.toiimg.com/thumb/msid-130181624,width-1280,height-720,imgsize-1003527,resizemode-6,overlay-toi_sw,pt-32,y_pad-600/photo.jpg",
+            "is_upsc_relevant": true,
+            "is_video": false,
+            "link": "https://timesofindia.indiatimes.com/india/rubio-to-visit-in-may-india-may-host-quad-meet/articleshow/130181472.cms",
+            "source": "The Times of India",
+            "summary": "US Secretary of State Marco Rubio is set to visit India in May. The visit follows a productive meeting with Indian Foreign Secretary Vikram Misri. The discussions focused on bilateral ties, including trade, critical minerals, defense, and the Quad. Efforts are under way to schedule a Quad foreign ministers' meeting around Rubio's visit. The meeting aims to strengthen bilateral ties and discuss key issues between the two nations.",
+            "time_added": "2026-04-11 04:27 AM"
+        },
+        {
+            "category": "Politics",
+            "headline": "Parties woo women voters with cash transfer promises",
+            "image": "https://static.toiimg.com/thumb/msid-130182173,width-1280,height-720,imgsize-1178671,resizemode-6,overlay-toi_sw,pt-32,y_pad-600/photo.jpg",
+            "is_upsc_relevant": true,
+            "is_video": false,
+            "link": "https://timesofindia.indiatimes.com/india/parties-woo-women-voters-with-cash-transfer-promises/articleshow/130182174.cms",
+            "source": "The Times of India",
+            "summary": "Political parties in Assam are competing for women's votes with cash-transfer promises. Women voters have shown high participation in recent elections in Assam, Puducherry, and Kerala. Their turnout has often surpassed that of male voters, influencing electoral dynamics. Parties are offering increased monthly payouts and empowerment initiatives to woo women voters. This strategy is significant as women's votes can impact election outcomes.",
+            "time_added": "2026-04-11 04:27 AM"
+        },
+        {
+            "category": "Economy",
+            "headline": "Sensex jumps 919pts as West Asia peace plan moves ahead",
+            "image": "https://static.toiimg.com/thumb/msid-130182186,width-1280,height-720,imgsize-1631114,resizemode-6,overlay-toi_sw,pt-32,y_pad-600/photo.jpg",
+            "is_upsc_relevant": true,
+            "is_video": false,
+            "link": "https://timesofindia.indiatimes.com/business/india-business/sensex-jumps-919pts-as-west-asia-peace-plan-moves-ahead/articleshow/130182187.cms",
+            "source": "The Times of India",
+            "summary": "The Sensex jumped 919 points due to a West Asia peace plan. Global markets, including India's, rallied as the peace plan offered hope for an end to the conflict. Foreign funds made significant inflows after weeks of selling, boosting investor wealth. However, tech stocks faced selling pressure due to renewed AI concerns. The surge in the market was a result of positive investor sentiment.",
+            "time_added": "2026-04-11 04:27 AM"
+        },
+        {
+            "category": "Politics",
+            "headline": "Political slugfest between Congress-BJP in Haryana over crop procurement",
+            "image": "https://th-i.thgim.com/public/news/national/other-states/7n6qic/article70848362.ece/alternates/LANDSCAPE_1200/IMG-20260410-WA0009.jpg",
+            "is_upsc_relevant": true,
+            "is_video": false,
+            "link": "https://www.thehindu.com/news/national/haryana/political-slugfest-between-congress-bjp-in-haryana-over-crop-procurement/article70848374.ece",
+            "source": "The Hindu",
+            "summary": "A political dispute has emerged between the Congress and BJP in Haryana regarding crop procurement. Former Haryana Chief Minister Bhupinder Singh Hooda criticized the treatment of farmers in grain markets. Hooda stated that farmers are being treated like criminals when selling their harvested crops. The issue highlights the challenges faced by farmers in the state. The Congress and BJP are engaged in a slugfest over the matter, with each party attempting to garner support from farmers.",
+            "time_added": "2026-04-11 04:27 AM"
+        },
+        {
             "category": "Crime",
+            "headline": "\u2018Tum kaale ho, you do not deserve me\u2019: Wife arrested for \u2018plotting\u2019 murder of Madhya Pradesh man",
+            "image": "https://images.indianexpress.com/2026/04/Dhar-murder-case-Priyanka-Purohit-arrest-1.jpg",
             "is_upsc_relevant": false,
+            "is_video": false,
+            "link": "https://indianexpress.com/article/india/dhar-madhya-pradesh-priyanka-purohit-husband-murder-plotting-10630003/",
+            "source": "Indian Express",
+            "summary": "A woman in Madhya Pradesh was arrested for allegedly plotting the murder of her husband. The wife was reportedly unhappy with her marriage and had made previous attempts to kill her husband. The police investigation revealed that the wife had hired contract killers to carry out the murder. The husband had survived a previous attempt on his life, and the wife was subsequently arrested. The case is currently under investigation by the local authorities.",
             "time_added": "2026-04-11 04:27 AM"
         },
         {
