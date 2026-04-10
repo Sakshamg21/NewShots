@@ -77,7 +77,7 @@ def analyze_with_ai(headline, summary):
     try:
         response = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama-3.1-8b-instant", 
+            model="llama-3.3-70b-versatile", 
             temperature=0.1, 
             # This is the magic parameter that blocks conversational filler
             response_format={"type": "json_object"}
