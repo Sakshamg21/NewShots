@@ -50,7 +50,7 @@ def get_existing_database():
         print(f"⚠️ Connection issue: {e}")
     return []
 
-# 👇 UPDATE 1: Changed threshold to 0.85
+# Threshold set to 0.85 to allow similar but different news
 def is_duplicate_story(new_headline, processed_headlines, threshold=0.85):
     for old_headline in processed_headlines:
         score = difflib.SequenceMatcher(None, new_headline.lower(), old_headline.lower()).ratio()
@@ -59,19 +59,19 @@ def is_duplicate_story(new_headline, processed_headlines, threshold=0.85):
             return True
     return False
 
+# 👇 NEW JSON-ENFORCED AI FUNCTION
 def analyze_with_ai(headline, summary):
-    """Professional News Analyst persona. Synced to strict 5-sentence summary."""
+    """Professional News Analyst persona. Synced to strict JSON output."""
     
     prompt = (
         f"You are a professional News Analyst. Read the following news story and "
-        f"categorize it, determine UPSC relevance, and summarize it into exactly 4 concise, factual sentences. "
-        f"IMPORTANT: Start your response immediately with 'CATEGORY:' and do not include any intro text.\n\n"
+        f"categorize it, determine UPSC relevance, and summarize it into exactly 4 concise, factual sentences.\n\n"
+        f"You MUST output your response as a valid JSON object using exactly these three keys:\n"
+        f"1. \"category\" (string, one word)\n"
+        f"2. \"is_upsc_relevant\" (boolean, true or false)\n"
+        f"3. \"summary\" (string, the 4 sentences)\n\n"
         f"HEADLINE: {headline}\n"
-        f"TEXT: {summary[:2500]}\n\n"
-        f"Format:\n"
-        f"CATEGORY: [One-word category]\n"
-        f"UPSC_RELEVANT: [True/False]\n"
-        f"SUMMARY: [Your 5 sentences]"
+        f"TEXT: {summary[:2500]}"
     )
 
     try:
@@ -79,24 +79,21 @@ def analyze_with_ai(headline, summary):
             messages=[{"role": "user", "content": prompt}],
             model="llama-3.1-8b-instant", 
             temperature=0.1, 
+            # This is the magic parameter that blocks conversational filler
+            response_format={"type": "json_object"}
         )
         
-        text = response.choices[0].message.content.strip()
+        raw_json_text = response.choices[0].message.content.strip()
+        ai_data = json.loads(raw_json_text)
         
-        cat_match = re.search(r'CATEGORY:\s*(.*?)(?=\n|UPSC_RELEVANT:|$)', text, re.IGNORECASE)
-        upsc_match = re.search(r'UPSC_RELEVANT:\s*(.*?)(?=\n|SUMMARY:|$)', text, re.IGNORECASE)
-        sum_match = re.search(r'SUMMARY:\s*(.*)', text, re.IGNORECASE | re.DOTALL)
-
-        if cat_match and upsc_match and sum_match:
-            category = re.sub(r'[\[\]\.]', '', cat_match.group(1).strip())
-            is_upsc = "true" in upsc_match.group(1).lower()
-            return {
-                "category": category.capitalize(), 
-                "is_upsc_relevant": is_upsc, 
-                "summary": sum_match.group(1).strip()
-            }
-        return None
-    except Exception:
+        return {
+            "category": str(ai_data.get("category", "General")).capitalize(), 
+            "is_upsc_relevant": bool(ai_data.get("is_upsc_relevant", False)), 
+            "summary": str(ai_data.get("summary", "")).strip()
+        }
+        
+    except Exception as e:
+        print(f"  ⚠️ AI Parsing Error: {e}")
         return None
 
 def fetch_media_details(headline, link):
@@ -173,9 +170,8 @@ def harvest_news():
                     "is_upsc_relevant": ai_data['is_upsc_relevant'],
                     "time_added": get_ist_time().strftime("%Y-%m-%d %I:%M %p")
                 })
-            # 👇 UPDATE 2: Added else block to print AI formatting failures
             else:
-                print(f"  🤖 AI Failed to Format: {headline[:30]}...")
+                print(f"  🤖 AI Failed/Rejected: {headline[:30]}...")
             
             time.sleep(2) 
             
