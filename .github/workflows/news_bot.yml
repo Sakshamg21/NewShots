@@ -29,7 +29,7 @@ jobs:
 
       - name: Run AI Scraper
         env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ }}
           FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_CX_ID: ${{ secrets.GOOGLE_CX_ID }}
