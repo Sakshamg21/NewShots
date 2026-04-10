@@ -175,7 +175,7 @@ def harvest_news():
             
             time.sleep(2) 
             
-    all_articles = (new_articles + existing_articles)[:100]
+    all_articles = (new_articles + existing_articles)[:1000]
     
     payload = {
         "status": "success",
