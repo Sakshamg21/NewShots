@@ -67,7 +67,7 @@ def analyze_with_ai(headline, summary):
         f"You are a professional News Analyst. Read the following news story and "
         f"categorize it, determine UPSC relevance, and summarize it into exactly 4-5 concise, factual sentences.\n\n"
         f"You MUST output your response as a valid JSON object using exactly these three keys:\n"
-        f"1. \"category\": You must choose exactly one category from this strict list: [Politics, Education, Miscellaneous, Business, Sports, Entertainment, Technology, Automobile, Hatke, International, Startups, Science, National, Travel, Fashion].\n"
+        f"1. \"category\": You must choose exactly one category from this strict list: [Politics, Education, Business, Sports, Entertainment, Technology, Automobile, Hatke, International, Startups, Science, National, Travel, Fashion].\n"
         f"2. \"is_upsc_relevant\": A boolean (true or false). Set to true ONLY if the topic aligns with the UPSC Civil Services syllabus (e.g., polity, governance, macroeconomics, environment, international relations).\n"
         f"3. \"summary\" (string, the 4-5 sentences)\n\n"
         f"HEADLINE: {headline}\n"
