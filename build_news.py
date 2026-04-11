@@ -65,11 +65,11 @@ def analyze_with_ai(headline, summary):
     
     prompt = (
         f"You are a professional News Analyst. Read the following news story and "
-        f"categorize it, determine UPSC relevance, and summarize it into exactly 5 concise, factual sentences.\n\n"
+        f"categorize it, determine UPSC relevance, and summarize it into exactly 4-5 concise, factual sentences.\n\n"
         f"You MUST output your response as a valid JSON object using exactly these three keys:\n"
         f"1. \"category\" (string, one word)\n"
         f"2. \"is_upsc_relevant\" (boolean, true or false)\n"
-        f"3. \"summary\" (string, the 4 sentences)\n\n"
+        f"3. \"summary\" (string, the 4-5 sentences)\n\n"
         f"HEADLINE: {headline}\n"
         f"TEXT: {summary[:2500]}"
     )
