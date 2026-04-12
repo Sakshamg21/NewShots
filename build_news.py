@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 import re
 import difflib
 import json 
+import cloudscraper
+from duckduckgo_search import DDGS
 
 from groq import Groq
 
@@ -18,10 +20,6 @@ client = Groq(api_key=GROQ_API_KEY)
 
 # Ensure NO trailing slash here
 FIREBASE_URL = "https://newshots-9e66b-default-rtdb.asia-southeast1.firebasedatabase.app"
-
-# Google Custom Search API Credentials 
-GOOGLE_API_KEY = os.environ.get("GOOGLE_SEARCH_API_KEY")
-GOOGLE_CX_ID = os.environ.get("GOOGLE_CX_ID")
 
 RSS_FEEDS = {
     "The Times of India": "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
@@ -55,21 +53,20 @@ def is_duplicate_story(new_headline, processed_headlines, threshold=0.85):
     for old_headline in processed_headlines:
         score = difflib.SequenceMatcher(None, new_headline.lower(), old_headline.lower()).ratio()
         if score > threshold:
-            print(f"   🚫 Skipped: Too similar to '{old_headline[:30]}...' (Score: {score:.2f})")
+            print(f"    🚫 Skipped: Too similar to '{old_headline[:30]}...' (Score: {score:.2f})")
             return True
     return False
 
-# 👇 NEW JSON-ENFORCED AI FUNCTION
 def analyze_with_ai(headline, summary):
     """Professional News Analyst persona. Synced to strict JSON output."""
     
     prompt = (
         f"You are a professional News Analyst. Read the following news story and "
-        f"categorize it, determine UPSC relevance, and summarize it into exactly 4-5 concise, factual sentences.\n\n"
+        f"categorize it, determine UPSC relevance, and summarize it into exactly 4 concise, factual sentences.\n\n"
         f"You MUST output your response as a valid JSON object using exactly these three keys:\n"
-        f"1. \"category\": You must choose exactly one category from this strict list: [Politics, Education, Business, Sports, Entertainment, Technology, Automobile, Hatke, International, Startups, Science, National, Travel, Fashion]. You MUST set to false for any political rhetoric, party statements, election rallies, or he-said/she-said political bickering.\n"
-        f"2. \"is_upsc_relevant\": A boolean (true or false). Set to true ONLY if the topic aligns with the UPSC Civil Services syllabus (e.g., polity, governance, macroeconomics, environment, international relations).\n"
-        f"3. \"summary\" (string, the 4-5 sentences)\n\n"
+        f"1. \"category\": You must choose exactly one category from this strict list: [Politics, Education, Miscellaneous, Business, Sports, Entertainment, Technology, Automobile, Hatke, International, Startups, Science, National, Travel, Fashion].\n"
+        f"2. \"is_upsc_relevant\": A boolean (true or false). Set to true ONLY if the topic involves concrete government policy, constitutional matters, macroeconomics, or international relations. You MUST set to false for any political rhetoric, party statements, election rallies, or he-said/she-said political bickering.\n"
+        f"3. \"summary\" (string, exactly 4 sentences)\n\n"
         f"HEADLINE: {headline}\n"
         f"TEXT: {summary[:2500]}"
     )
@@ -99,33 +96,36 @@ def analyze_with_ai(headline, summary):
 def fetch_media_details(headline, link):
     image_url = "https://images.unsplash.com/photo-1495020689067-958852a7765e?q=80&w=1000"
     is_video = False
+    
+    if "/videos/" in link.lower() or "video-show" in link.lower():
+        is_video = True
+
     try:
-        res = requests.get(link, headers={'User-Agent': USER_AGENT}, timeout=10)
-        soup = BeautifulSoup(res.content, 'html.parser')
+        # STRATEGY 1: The Cloudscraper Stealth Mode
+        scraper = cloudscraper.create_scraper(browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False})
+        res = scraper.get(link, timeout=10)
         
-        if "/videos/" in link.lower() or "video-show" in link.lower():
-            is_video = True
-        
+        soup = BeautifulSoup(res.text, 'html.parser')
         og_img = soup.find('meta', property='og:image') or soup.find('meta', attrs={'name': 'twitter:image'})
+        
         if og_img and og_img.get('content'):
             temp_img = og_img['content']
             if not any(x in temp_img.lower() for x in ["logo", "icon", "thehindu", "toi-logo", "default"]):
-                image_url = temp_img
-                return {"image": image_url, "is_video": is_video}
+                return {"image": temp_img, "is_video": is_video}
 
-        if GOOGLE_API_KEY and GOOGLE_CX_ID:
-            clean_query = re.sub(r'[^\w\s]', '', headline) 
-            search_query = " ".join(clean_query.split()[:7]) + " news"
-            google_url = "https://customsearch.googleapis.com/customsearch/v1"
-            params = {'q': search_query, 'cx': GOOGLE_CX_ID, 'key': GOOGLE_API_KEY, 'searchType': 'image', 'num': 1}
-            api_res = requests.get(google_url, params=params, timeout=10)
-            if api_res.status_code == 200:
-                data = api_res.json()
-                if 'items' in data and len(data['items']) > 0:
-                    image_url = data['items'][0]['link']
-                
-    except Exception:
-        pass
+        # STRATEGY 2: The DuckDuckGo Unlimited Search
+        clean_query = re.sub(r'[^\w\s]', '', headline) 
+        search_query = " ".join(clean_query.split()[:7]) + " news"
+        
+        print(f"    🔍 Searching DuckDuckGo for: {search_query}")
+        with DDGS() as ddgs:
+            results = list(ddgs.images(search_query, max_results=1)) 
+            if results and len(results) > 0:
+                return {"image": results[0]['image'], "is_video": is_video}
+
+    except Exception as e:
+        print(f"    ⚠️ Media Fetch Error: {e}")
+        
     return {"image": image_url, "is_video": is_video}
 
 # ==========================================
@@ -159,8 +159,12 @@ def harvest_news():
                 print(f"  ✨ Added [{ai_data['category']}] -> {headline[:40]}...")
                 media_data = fetch_media_details(headline, link)
                 
+                # We safely split the headline. If it's empty, we default to "News"
+                word_headline = headline.split()[0] if headline else "News"
+                
                 new_articles.append({
                     "headline": headline,
+                    "word_headline": word_headline,
                     "summary": ai_data['summary'],
                     "link": link,
                     "image": media_data['image'],
@@ -183,10 +187,6 @@ def harvest_news():
         "total_articles": len(all_articles),
         "data": all_articles
     }
-    
-    # 💾 Local backup for GitHub
-    with open('upsc_news.json', 'w') as f:
-        json.dump(payload, f, indent=4)
 
     # 🚀 Direct Push to Firebase
     try:
