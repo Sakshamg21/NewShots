@@ -2,7 +2,7 @@ name: UPSC AI News Harvester
 
 on:
   schedule:
-    - cron: '*/50 * * * *' 
+    - cron: '*/30 * * * *' 
   workflow_dispatch: 
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
 
       - name: Install Libraries
         run: |
-          pip install -U feedparser groq requests beautifulsoup4
+          pip install -U feedparser groq requests beautifulsoup4 cloudscraper duckduckgo_search
 
       - name: Run AI Scraper
         env:
